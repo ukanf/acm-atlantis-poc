@@ -1,0 +1,63 @@
+name: Render Kustomize in PR
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "base/**"
+      - "overlays/**"
+      - ".github/workflows/render.yaml"
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref }}
+
+      - name: Install Kustomize (no sudo)
+        run: |
+          mkdir -p $HOME/bin
+          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          mv kustomize $HOME/bin/
+          echo "$HOME/bin" >> $GITHUB_PATH
+
+      - name: Clean and render overlays
+        run: |
+          echo "Cleaning rendered/ directory..."
+          rm -rf rendered
+          mkdir -p rendered
+
+          echo "Rendering overlays..."
+          find overlays -mindepth 1 -maxdepth 1 -type d | while read -r overlay_dir; do
+            if [ -f "$overlay_dir/kustomization.yaml" ]; then
+              cluster_name=$(basename "$overlay_dir")
+              out_dir="rendered/$cluster_name"
+              mkdir -p "$out_dir"
+              echo "Rendering $overlay_dir -> $out_dir"
+              kustomize build "$overlay_dir" -o "$out_dir"
+            else
+              echo "Skipping $overlay_dir (no kustomization.yaml found)"
+            fi
+          done
+
+      - name: Commit rendered manifests if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if ! git diff --quiet -- rendered; then
+            echo "Detected changes in rendered/ — committing..."
+            git add rendered
+            git commit -m "Update rendered manifests [skip ci]"
+            git push origin HEAD:${{ github.head_ref }}
+          else
+            echo "No changes detected in rendered/ — skipping commit."
+          fi
