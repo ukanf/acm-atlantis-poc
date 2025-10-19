@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: my-deployment-2
+  name: my-new-deployment-2
   namespace: my-deployment-2-ns
 spec:
   replicas: 1
