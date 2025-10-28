@@ -1,0 +1,56 @@
+name: Deploy OCI Artifact to GKE ACM
+
+on:
+  workflow_dispatch:
+    inputs:
+      gke_project:
+        description: 'GCP Project ID'
+        required: true
+      gke_location:
+        description: 'GKE Cluster Location (zone or region)'
+        required: true
+      gke_cluster:
+        description: 'GKE Cluster Name'
+        required: true
+      acm_namespace:
+        description: 'Namespace of RootSync/RepoSync (usually config-management-system)'
+        required: true
+        default: 'config-management-system'
+      acm_resource:
+        description: 'Name of RootSync/RepoSync resource (e.g. root-sync)'
+        required: true
+        default: 'root-sync'
+      oci_image:
+        description: 'OCI Artifact Reference (e.g. LOCATION-docker.pkg.dev/PROJECT/REPO/ARTIFACT:TAG)'
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_ARTIFACT_REGISTRY_SA_KEY }}'
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials "${{ github.event.inputs.gke_cluster }}" \
+            --region "${{ github.event.inputs.gke_location }}" \
+            --project "${{ github.event.inputs.gke_project }}"
+
+      - name: Patch RootSync/RepoSync to new OCI artifact
+        run: |
+          kubectl -n "${{ github.event.inputs.acm_namespace }}" patch rootsync "${{ github.event.inputs.acm_resource }}" \
+            --type='merge' \
+            -p "{\"spec\":{\"sourceType\":\"oci\",\"oci\":{\"image\":\"${{ github.event.inputs.oci_image }}\"}}}"
+
+      - name: Check RootSync/RepoSync status
+        run: |
+          kubectl -n "${{ github.event.inputs.acm_namespace }}" get rootsync "${{ github.event.inputs.acm_resource }}" -o yaml
