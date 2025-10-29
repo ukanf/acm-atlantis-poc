@@ -47,11 +47,11 @@ jobs:
 
       - name: Verify RootSync exists
         run: |
-          kubectl -n ${{ github.event.inputs.acm_namespace }} get deployment/root-reconciler"
+          kubectl -n ${{ github.event.inputs.acm_namespace }} get deployment/root-reconciler
 
       - name: Patch RootSync to new OCI artifact
         run: |
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" patch deployment/root-reconciler" \
+          kubectl -n ${{ github.event.inputs.acm_namespace }} patch deployment/root-reconciler \
             --type=merge \
             -p "{\"spec\": {\"sourceType\": \"oci\", \"oci\": {\"image\": \"${{ github.event.inputs.oci_image }}\"}}}"
 
