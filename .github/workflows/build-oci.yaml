@@ -30,6 +30,10 @@ jobs:
           tar -xzf oras_1.1.0_linux_amd64.tar.gz
           sudo mv oras /usr/local/bin/
 
+      - name: Authenticate ORAS to Artifact Registry
+        run: |
+          gcloud auth print-access-token | oras login ${{ github.event.inputs.registry }} --username=oauth2accesstoken --password-stdin
+
       - name: Push YAML files as OCI artifact
         run: |
           ls -la
