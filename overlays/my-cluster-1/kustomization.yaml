@@ -7,8 +7,8 @@ resources:
 patches:
   - target:
       kind: Deployment
-      name: my-deployment-1-renamed
+      name: my-deployment-1
     patch: |-
       - op: replace
         path: /metadata/name
-        value: my-cluster-1-deployment
+        value: my-cluster-1-deployment-renamed
