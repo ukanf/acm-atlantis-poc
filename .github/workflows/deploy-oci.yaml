@@ -19,10 +19,6 @@ on:
         description: 'Namespace of RootSync/RepoSync (usually config-management-system)'
         required: true
         default: 'config-management-system'
-      acm_resource:
-        description: 'Name of RootSync/RepoSync resource (e.g. root-sync)'
-        required: true
-        default: 'root-sync'
       oci_image:
         description: 'OCI Artifact Reference (e.g. LOCATION-docker.pkg.dev/PROJECT/REPO/ARTIFACT:TAG)'
         required: true
@@ -51,11 +47,11 @@ jobs:
 
       - name: Verify RootSync exists
         run: |
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" get rootsync "${{ github.event.inputs.acm_resource }}"
+          kubectl -n "${{ github.event.inputs.acm_namespace }}" get deployment/root-reconciler"
 
       - name: Patch RootSync to new OCI artifact
         run: |
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" patch rootsync "${{ github.event.inputs.acm_resource }}" \
+          kubectl -n "${{ github.event.inputs.acm_namespace }}" patch deployment/root-reconciler" \
             --type=merge \
             -p "{\"spec\": {\"sourceType\": \"oci\", \"oci\": {\"image\": \"${{ github.event.inputs.oci_image }}\"}}}"
 
@@ -63,4 +59,4 @@ jobs:
         run: |
           echo "Waiting for reconciliation..."
           sleep 10
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" get rootsync "${{ github.event.inputs.acm_resource }}" -o yaml
+          kubectl -n "${{ github.event.inputs.acm_namespace }}" get deployment/root-reconciler -o yaml
