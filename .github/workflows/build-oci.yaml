@@ -10,7 +10,7 @@ on:
       registry:
         description: 'GCP Artifact Registry repo (e.g. LOCATION-docker.pkg.dev/PROJECT/REPOSITORY)'
         required: true
-        default: 'todo'
+        default: 'us-central1-docker.pkg.dev/tf-atlantis-poc/atlantis-docker'
 
 jobs:
   build-and-push:
@@ -32,6 +32,7 @@ jobs:
 
       - name: Push YAML files as OCI artifact
         run: |
+          ls -la
           cd redered/${{ github.event.inputs.cluster_name }}
           oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.cluster_name }}:latest \
             *.yaml:application/x-yaml
