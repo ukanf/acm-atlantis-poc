@@ -53,12 +53,17 @@ jobs:
 
       - name: Patch RootSync to new OCI artifact
         run: |
-          kubectl -n config-management-system patch deployment root-reconciler \
-          --type='json' \
-          -p="$(kubectl -n config-management-system get deployment root-reconciler -o json \
-              | jq '[.spec.template.spec.containers[0].env
-                    | map(if .name=="SOURCE_REPO" then .value="${{ github.event.inputs.oci_image }}" else . end)
-                    | {"op":"replace","path":"/spec/template/spec/containers/0/env","value":.}]')"
+          kubectl patch rootsync root-sync \
+          -n config-management-system \
+          --type=merge \
+          -p '{
+            "spec": {
+              "sourceType": "oci",
+              "oci": {
+                "image": "${{ github.event.inputs.oci_image }}"
+              }
+            }
+          }'
 
       - name: Wait and Check RootSync status
         run: |
