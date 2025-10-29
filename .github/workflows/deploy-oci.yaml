@@ -47,7 +47,7 @@ jobs:
 
       - name: Verify RootSync exists
         run: |
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" get deployment/root-reconciler"
+          kubectl -n ${{ github.event.inputs.acm_namespace }} get deployment/root-reconciler"
 
       - name: Patch RootSync to new OCI artifact
         run: |
@@ -59,4 +59,4 @@ jobs:
         run: |
           echo "Waiting for reconciliation..."
           sleep 10
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" get deployment/root-reconciler -o yaml
+          kubectl -n ${{ github.event.inputs.acm_namespace }} get deployment/root-reconciler -o yaml
