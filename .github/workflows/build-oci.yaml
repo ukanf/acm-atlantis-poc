@@ -33,6 +33,7 @@ jobs:
       - name: Push YAML files as OCI artifact
         run: |
           ls -la
-          cd redered/${{ github.event.inputs.cluster_name }}
+          cd redered/
+          ls -la
           oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.cluster_name }}:latest \
             *.yaml:application/x-yaml
