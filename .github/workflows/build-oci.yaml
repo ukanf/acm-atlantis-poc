@@ -1,0 +1,39 @@
+name: Build and Push OCI YAML Artifact
+
+on:
+  workflow_dispatch:
+    inputs:
+      folder:
+        description: 'Path to the folder containing YAML files to push as OCI artifact'
+        required: true
+        default: '.'
+      image_name:
+        description: 'OCI artifact name (e.g. my-artifact)'
+        required: true
+      registry:
+        description: 'GCP Artifact Registry repo (e.g. LOCATION-docker.pkg.dev/PROJECT/REPOSITORY)'
+        required: true
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_ARTIFACT_REGISTRY_SA_KEY }}'
+
+      - name: Install ORAS
+        run: |
+          curl -LO https://github.com/oras-project/oras/releases/download/v1.1.0/oras_1.1.0_linux_amd64.tar.gz
+          tar -xzf oras_1.1.0_linux_amd64.tar.gz
+          sudo mv oras /usr/local/bin/
+
+      - name: Push YAML files as OCI artifact
+        run: |
+          cd ${{ github.event.inputs.folder }}
+          oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.image_name }}:latest \
+            *.yaml:application/x-yaml
