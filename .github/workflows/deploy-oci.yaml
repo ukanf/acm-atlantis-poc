@@ -6,12 +6,15 @@ on:
       gke_project:
         description: 'GCP Project ID'
         required: true
+        default: "tf-atlantis-poc"
       gke_location:
         description: 'GKE Cluster Location (zone or region)'
         required: true
+        default: "my-cluster-1"
       gke_cluster:
         description: 'GKE Cluster Name'
         required: true
+        default: "my-cluster-1"
       acm_namespace:
         description: 'Namespace of RootSync/RepoSync (usually config-management-system)'
         required: true
