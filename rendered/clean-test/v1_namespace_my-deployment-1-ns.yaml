@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  labels:
-    name: my-deployment-1-ns
-  name: my-deployment-1-ns
