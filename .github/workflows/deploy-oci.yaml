@@ -63,19 +63,11 @@ jobs:
           echo "Current RootSync config:"
           kubectl get rootsync root-sync -n config-management-system -o yaml
           echo -e "\n\nPatching RootSync..."
-          
-          kubectl patch rootsync root-sync \
-          -n config-management-system \
-          --type=merge \
-          -p '{
-            "spec": {
-              "oci": {
-                "image": "${{ github.event.inputs.oci_image }}",
-                "auth": "gcpserviceaccount",
-                "gcpServiceAccountEmail": "atlantis-config-mgmt@tf-atlantis-poc.iam.gserviceaccount.com"
-              }
-            }
-          }'
+
+          kubectl patch rootsync root-reconciler \
+            -n config-management-system \
+            --type='merge' \
+            -p '{"spec":{"source":{"oci":{"image":"${{ github.event.inputs.oci_image }}"}}}}'
           
           # Verify the new config
           echo -e "\nVerifying new config:"
