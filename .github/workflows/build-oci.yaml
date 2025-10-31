@@ -47,7 +47,8 @@ jobs:
 
       - name: Push YAML files as OCI artifact
         run: |
-          ls -la
           cd rendered/${{ github.event.inputs.cluster_name }}
+          ls -la
+          echo "Run tar.gz all yaml files in this folder"
           tar -czf acm-artifact.tar.gz *.yaml
           oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.cluster_name }}:latest acm-artifact.tar.gz
