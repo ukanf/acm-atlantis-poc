@@ -49,9 +49,5 @@ jobs:
         run: |
           ls -la
           cd rendered/${{ github.event.inputs.cluster_name }}
-          ls -la
-          files=""
-          for f in *.yaml; do
-            files="$files $f:application/x-yaml"
-          done
-          oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.cluster_name }}:latest $files
+          tar -czf acm-artifact.tar.gz *.yaml
+          oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.cluster_name }}:latest acm-artifact.tar.gz
