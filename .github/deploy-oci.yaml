@@ -1,0 +1,84 @@
+# IMPORTANT NOTE: DECIDED TO KEEP THIS IN THE TERRAFORM FILE FOR NOW
+# This file would be under workflows.. but we wont use it as there is a fundamental
+# problem with managing the artifact version in the TF and here...
+
+# name: Deploy OCI Artifact to GKE ACM
+
+# on:
+#   workflow_dispatch:
+#     inputs:
+#       gke_project:
+#         description: 'GCP Project ID'
+#         required: true
+#         default: 'tf-atlantis-poc'
+#       gke_location:
+#         description: 'GKE Cluster Location (zone or region)'
+#         required: true
+#         default: 'us-central1'
+#       gke_cluster:
+#         description: 'GKE Cluster Name'
+#         required: true
+#         default: 'my-cluster-1'
+#       oci_image:
+#         description: 'OCI Artifact Reference (e.g. LOCATION-docker.pkg.dev/PROJECT/REPO/ARTIFACT:TAG)'
+#         required: true
+#         default: 'us-central1-docker.pkg.dev/tf-atlantis-poc/atlantis-docker/my-cluster-1@sha256:2471261db52c2896057c009c106ed0c04b9157f6e8ab204d4777e8093350b7a2'
+
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     permissions:
+#       contents: 'read'
+#       id-token: 'write'
+      
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Authenticate to Google Cloud
+#         uses: google-github-actions/auth@v2
+#         with:
+#           workload_identity_provider: 'projects/122834034033/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+#           service_account: 'atlantis-deployer@tf-atlantis-poc.iam.gserviceaccount.com'
+#           audience: 'https://iam.googleapis.com/projects/122834034033/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+
+#       - name: Set up gcloud CLI
+#         uses: google-github-actions/setup-gcloud@v2
+
+#       - name: Install gke-gcloud-auth-plugin
+#         run: |
+#           echo "Installing gke-gcloud-auth-plugin..."
+#           gcloud components install gke-gcloud-auth-plugin --quiet
+#           echo "export USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> $GITHUB_ENV
+
+#       - name: Get GKE credentials
+#         run: |
+#           gcloud container clusters get-credentials "${{ github.event.inputs.gke_cluster }}" \
+#             --region "${{ github.event.inputs.gke_location }}" \
+#             --project "${{ github.event.inputs.gke_project }}"
+
+#       - name: Verify RootSync exists
+#         run: |
+#           kubectl -n config-management-system get rootsync root-sync
+
+#       - name: Patch RootSync to new OCI artifact
+#         run: |
+#           # First check current config
+#           echo "Current RootSync config:"
+#           kubectl get rootsync root-sync -n config-management-system -o yaml
+#           echo -e "\n\nPatching RootSync..."
+
+#           kubectl patch rootsync root-reconciler \
+#             -n config-management-system \
+#             --type='merge' \
+#             -p '{"spec":{"source":{"oci":{"image":"${{ github.event.inputs.oci_image }}"}}}}'
+          
+#           # Verify the new config
+#           echo -e "\nVerifying new config:"
+#           kubectl get rootsync root-sync -n config-management-system -o yaml
+
+#       - name: Wait and Check RootSync status
+#         run: |
+#           echo "Waiting for reconciliation..."
+#           sleep 10
+#           kubectl -n config-management-system get rootsync root-sync -o yaml
