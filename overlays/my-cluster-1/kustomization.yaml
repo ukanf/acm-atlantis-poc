@@ -11,4 +11,4 @@ patches:
     patch: |-
       - op: replace
         path: /metadata/name
-        value: my-cluster-1-deployment
+        value: my-cluster-1-deployment-renamed

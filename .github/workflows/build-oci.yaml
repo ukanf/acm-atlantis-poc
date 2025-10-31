@@ -3,28 +3,34 @@ name: Build and Push OCI YAML Artifact
 on:
   workflow_dispatch:
     inputs:
-      folder:
-        description: 'Path to the folder containing YAML files to push as OCI artifact'
+      cluster_name:
+        description: 'Cluster Name (comes from redered folder: /rendered/<cluster-name>)'
         required: true
-        default: '.'
-      image_name:
-        description: 'OCI artifact name (e.g. my-artifact)'
-        required: true
+        default: 'my-cluster-1'
       registry:
         description: 'GCP Artifact Registry repo (e.g. LOCATION-docker.pkg.dev/PROJECT/REPOSITORY)'
         required: true
+        default: 'us-central1-docker.pkg.dev/tf-atlantis-poc/atlantis-docker'
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Google Cloud SDK
-        uses: google-github-actions/auth@v2
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
         with:
-          credentials_json: '${{ secrets.GCP_ARTIFACT_REGISTRY_SA_KEY }}'
+          workload_identity_provider: 'projects/tf-atlantis-poc/locations/global/workloadIdentityPools/github-pool/providers/github-provider'
+          service_account: 'atlantis-artifact-pusher@tf-atlantis-poc.iam.gserviceaccount.com'
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
 
       - name: Install ORAS
         run: |
@@ -32,8 +38,19 @@ jobs:
           tar -xzf oras_1.1.0_linux_amd64.tar.gz
           sudo mv oras /usr/local/bin/
 
+      - name: Authenticate ORAS to Artifact Registry
+        run: |
+          REGISTRY_HOST=$(echo "${{ github.event.inputs.registry }}" | cut -d'/' -f1)
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          oras login "$REGISTRY_HOST" --username=oauth2accesstoken --password="$ACCESS_TOKEN"
+
       - name: Push YAML files as OCI artifact
         run: |
-          cd ${{ github.event.inputs.folder }}
-          oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.image_name }}:latest \
-            *.yaml:application/x-yaml
+          ls -la
+          cd rendered/${{ github.event.inputs.cluster_name }}
+          ls -la
+          files=""
+          for f in *.yaml; do
+            files="$files $f:application/x-yaml"
+          done
+          oras push ${{ github.event.inputs.registry }}/${{ github.event.inputs.cluster_name }}:latest $files

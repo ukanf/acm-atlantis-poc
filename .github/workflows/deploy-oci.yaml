@@ -6,38 +6,40 @@ on:
       gke_project:
         description: 'GCP Project ID'
         required: true
+        default: 'tf-atlantis-poc'
       gke_location:
         description: 'GKE Cluster Location (zone or region)'
         required: true
+        default: 'us-central1'
       gke_cluster:
         description: 'GKE Cluster Name'
         required: true
-      acm_namespace:
-        description: 'Namespace of RootSync/RepoSync (usually config-management-system)'
-        required: true
-        default: 'config-management-system'
-      acm_resource:
-        description: 'Name of RootSync/RepoSync resource (e.g. root-sync)'
-        required: true
-        default: 'root-sync'
+        default: 'my-cluster-1'
       oci_image:
         description: 'OCI Artifact Reference (e.g. LOCATION-docker.pkg.dev/PROJECT/REPO/ARTIFACT:TAG)'
         required: true
+        default: 'us-central1-docker.pkg.dev/tf-atlantis-poc/atlantis-docker/my-cluster-1@sha256:2471261db52c2896057c009c106ed0c04b9157f6e8ab204d4777e8093350b7a2'
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GCP_ARTIFACT_REGISTRY_SA_KEY }}'
+          credentials_json: '${{ secrets.GCP_DEPLOYER_SA_KEY }}'
 
       - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          echo "Installing gke-gcloud-auth-plugin..."
+          gcloud components install gke-gcloud-auth-plugin --quiet
+          echo "export USE_GKE_GCLOUD_AUTH_PLUGIN=True" >> $GITHUB_ENV
 
       - name: Get GKE credentials
         run: |
@@ -45,12 +47,26 @@ jobs:
             --region "${{ github.event.inputs.gke_location }}" \
             --project "${{ github.event.inputs.gke_project }}"
 
-      - name: Patch RootSync/RepoSync to new OCI artifact
+      - name: Verify RootSync exists
         run: |
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" patch rootsync "${{ github.event.inputs.acm_resource }}" \
-            --type='merge' \
-            -p "{\"spec\":{\"sourceType\":\"oci\",\"oci\":{\"image\":\"${{ github.event.inputs.oci_image }}\"}}}"
+          kubectl -n config-management-system get rootsync root-sync
 
-      - name: Check RootSync/RepoSync status
+      - name: Patch RootSync to new OCI artifact
         run: |
-          kubectl -n "${{ github.event.inputs.acm_namespace }}" get rootsync "${{ github.event.inputs.acm_resource }}" -o yaml
+          kubectl patch rootsync root-sync \
+          -n config-management-system \
+          --type=merge \
+          -p '{
+            "spec": {
+              "sourceType": "oci",
+              "oci": {
+                "image": "${{ github.event.inputs.oci_image }}"
+              }
+            }
+          }'
+
+      - name: Wait and Check RootSync status
+        run: |
+          echo "Waiting for reconciliation..."
+          sleep 10
+          kubectl -n config-management-system get rootsync root-sync -o yaml
