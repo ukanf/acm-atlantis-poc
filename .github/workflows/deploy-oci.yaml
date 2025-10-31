@@ -59,10 +59,10 @@ jobs:
 
       - name: Patch RootSync to new OCI artifact
         run: |
-          # First check current image
-          echo "Current image:"
-          kubectl get rootsync root-sync -n config-management-system -o jsonpath='{.spec.oci.image}'
-          echo -e "\n\nPatching to new image..."
+          # First check current config
+          echo "Current RootSync config:"
+          kubectl get rootsync root-sync -n config-management-system -o yaml
+          echo -e "\n\nPatching RootSync..."
           
           kubectl patch rootsync root-sync \
           -n config-management-system \
@@ -70,15 +70,16 @@ jobs:
           -p '{
             "spec": {
               "oci": {
-                "image": "${{ github.event.inputs.oci_image }}"
+                "image": "${{ github.event.inputs.oci_image }}",
+                "auth": "gcpserviceaccount",
+                "gcpServiceAccountEmail": "atlantis-config-mgmt@tf-atlantis-poc.iam.gserviceaccount.com"
               }
             }
           }'
           
-          # Verify the new image
-          echo -e "\nVerifying new image:"
-          kubectl get rootsync root-sync -n config-management-system -o jsonpath='{.spec.oci.image}'
-          echo
+          # Verify the new config
+          echo -e "\nVerifying new config:"
+          kubectl get rootsync root-sync -n config-management-system -o yaml
 
       - name: Wait and Check RootSync status
         run: |
