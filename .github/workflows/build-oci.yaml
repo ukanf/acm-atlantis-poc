@@ -47,6 +47,7 @@ jobs:
 
       - name: Push YAML files as OCI artifact
         run: |
+          # we must tar.gz: https://cloud.google.com/kubernetes-engine/enterprise/config-sync/docs/how-to/sync-oci-artifacts-from-artifact-registry#push-to-ar
           cd rendered/${{ github.event.inputs.cluster_name }}
           ls -la
           echo "Run tar.gz all yaml files in this folder"
