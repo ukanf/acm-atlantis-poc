@@ -59,17 +59,26 @@ jobs:
 
       - name: Patch RootSync to new OCI artifact
         run: |
+          # First check current image
+          echo "Current image:"
+          kubectl get rootsync root-sync -n config-management-system -o jsonpath='{.spec.oci.image}'
+          echo -e "\n\nPatching to new image..."
+          
           kubectl patch rootsync root-sync \
           -n config-management-system \
           --type=merge \
           -p '{
             "spec": {
-              "sourceType": "oci",
               "oci": {
                 "image": "${{ github.event.inputs.oci_image }}"
               }
             }
           }'
+          
+          # Verify the new image
+          echo -e "\nVerifying new image:"
+          kubectl get rootsync root-sync -n config-management-system -o jsonpath='{.spec.oci.image}'
+          echo
 
       - name: Wait and Check RootSync status
         run: |
