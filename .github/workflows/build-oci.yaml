@@ -13,9 +13,6 @@ on:
       wif_provider: 
         description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. projects/<PROJECT NUMBER>/locations/global/workloadIdentityPools/<POOL ID>/providers/<PROVIDER ID>)'
         required: true
-      wif_audience: 
-        description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. https://iam.googleapis.com/projects/<PROJECT NUMBER>/locations/global/workloadIdentityPools/<POOL ID>/providers/<PROVIDER ID>)'
-        required: true
       artifact_pusher_service_account_email:
         description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. atlantis-artifact-pusher@<PROJECT ID>.iam.gserviceaccount.com)'
         required: true
@@ -35,8 +32,8 @@ jobs:
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ github.event.inputs.wif_provider }}
-          service_account: 'atlantis-artifact-pusher@tf-atlantis-poc.iam.gserviceaccount.com'
-          audience: ${{ github.event.inputs.wif_audience }}
+          service_account: ${{ github.event.inputs.artifact_pusher_service_account_email }}
+          audience: 'https://iam.googleapis.com/${{ github.event.inputs.wif_provider }}'
 
       - name: Set up Google Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
