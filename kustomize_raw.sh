@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Used to render locally... useful to test changes.
+
 mkdir -p rendered
 find overlays -mindepth 1 -maxdepth 1 -type d | while read -r overlay_dir; do
     if [ -f "$overlay_dir/kustomization.yaml" ]; then
