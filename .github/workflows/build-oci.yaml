@@ -11,10 +11,13 @@ on:
         description: 'GCP Artifact Registry repo (e.g. <LOCATION>-docker.pkg.dev/<PROJECT>/<REPOSITORY>)'
         required: true
       wif_provider: 
-        description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. projects/<PROJECT ID>/locations/global/workloadIdentityPools/<POOL ID>/providers/<PROVIDER ID>)'
+        description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. projects/<PROJECT NUMBER>/locations/global/workloadIdentityPools/<POOL ID>/providers/<PROVIDER ID>)'
         required: true
       wif_audience: 
-        description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. https://iam.googleapis.com/projects/<PROJECT ID>/locations/global/workloadIdentityPools/<POOL ID>/providers/<PROVIDER ID>)'
+        description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. https://iam.googleapis.com/projects/<PROJECT NUMBER>/locations/global/workloadIdentityPools/<POOL ID>/providers/<PROVIDER ID>)'
+        required: true
+      artifact_pusher_service_account_email:
+        description: 'COPY FROM TF OUTPUTS - HARDCODE IT HERE AFTERWARDS (e.g. atlantis-artifact-pusher@<PROJECT ID>.iam.gserviceaccount.com)'
         required: true
 
 jobs:
